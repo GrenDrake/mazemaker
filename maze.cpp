@@ -192,7 +192,7 @@ void gameloop(SDL_Renderer *renderer) {
         line3 << "Z to Quit   SPACE to Step  R to Run to Completion  C for Cheat Mode  ARROWS to Move";
         if (cheatMode) line3 << "  (CHEAT MODE)";
         if (randomMode) line3 << "  (RANDOM)";
-        else            line3 << "  (TOP)";
+        else            line3 << "  (MOST RECENT)";
         font.text(0, SCREEN_HEIGHT - 10, line3.str());
 
         SDL_RenderPresent(renderer);
