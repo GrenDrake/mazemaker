@@ -140,7 +140,7 @@ void gameloop(SDL_Renderer *renderer) {
 
     unsigned mapSteps = 0;
     bool showDistances = false;
-    bool randomMode = false;
+    bool randomMode = true;
     bool cheatMode = false;
     const int X_OFFSET = 18;
     const int Y_OFFSET = 10;
