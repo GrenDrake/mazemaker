@@ -34,12 +34,12 @@ public:
 
     struct Cell {
         Cell()
-        : east(true), south(true), dist(-1), viewed(false)
+        : east(true), south(true), dist(-1), viewed(false), solution(false)
         { }
 
         bool east, south;
         int dist;
-        bool viewed;
+        bool viewed, solution;
     };
 
     Map(int width, int height)

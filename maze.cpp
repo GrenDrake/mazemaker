@@ -15,6 +15,10 @@
 const int SCREEN_WIDTH = 1000;
 const int SCREEN_HEIGHT = 700;
 
+enum class Display {
+    None, Distance, Solution
+};
+
 struct Color {
     int r, g, b;
 };
@@ -53,6 +57,35 @@ Coord calcDistance(Map &map) {
     return mostDistant;
 }
 
+void findPath(Map &map) {
+    Coord current = map.getTarget();
+    while (map.at(current).dist > 0) {
+        map.at(current).solution = true;
+        Direction dir = North;
+        Coord next(-1, -1);
+        int cDistance = INT32_MAX;
+
+        do {
+            Coord target = current;
+            target.shift(dir);
+            if (map.isOpen(current, dir)) {
+                int targetDistance = map.at(target).dist;
+                if (targetDistance < cDistance) {
+                    cDistance = map.at(target).dist;
+                    next = target;
+                }
+            }
+            dir = rotate(dir);
+        } while (dir != North);
+
+        if (next.x == -1 && next.y == -1) {
+            return;
+        } else {
+            current = next;
+        }
+    }
+}
+
 bool tryMove(const Map &map, Coord &position, Direction dir, bool cheatMode) {
     if (cheatMode) {
         Coord target = position;
@@ -71,7 +104,7 @@ bool tryMove(const Map &map, Coord &position, Direction dir, bool cheatMode) {
     }
 }
 
-void drawMapCell(SDL_Renderer *renderer, int atX, int atY, const Map &map, const Coord &position, bool showDistances, bool player) {
+void drawMapCell(SDL_Renderer *renderer, int atX, int atY, const Map &map, const Coord &position, Display displayMode, bool player) {
     const Map::Cell &cell = map.at(position.x, position.y);
     const Map::Cell &target = map.at(map.getTarget());
     SDL_Rect here = { atX, atY, Map::CELL_SIZE, Map::CELL_SIZE };
@@ -87,10 +120,14 @@ void drawMapCell(SDL_Renderer *renderer, int atX, int atY, const Map &map, const
     SDL_SetRenderDrawColor(renderer, 170, 170, 170, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawRect(renderer, &here);
 
-    if (cell.dist >= 0 && showDistances) {
+    if (cell.dist >= 0 && displayMode == Display::Distance) {
         double percent = static_cast<double>(cell.dist) / static_cast<double>(target.dist);
         int greyness = 255.0 * percent;
         SDL_SetRenderDrawColor(renderer, greyness/2, greyness, greyness, SDL_ALPHA_OPAQUE);
+        SDL_RenderFillRect(renderer, &distRect);
+    }
+    if (cell.solution && displayMode == Display::Solution) {
+        SDL_SetRenderDrawColor(renderer, 128, 255, 255, SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(renderer, &distRect);
     }
 
@@ -139,7 +176,7 @@ void gameloop(SDL_Renderer *renderer) {
     Coord target{ -1, -1 };
 
     unsigned mapSteps = 0;
-    bool showDistances = false;
+    Display displayMode = Display::None;
     MazeMaker::Source mazeGen = MazeMaker::Random;
     bool cheatMode = false;
     const int X_OFFSET = 18;
@@ -164,7 +201,7 @@ void gameloop(SDL_Renderer *renderer) {
                             X_OFFSET + x * Map::CELL_SIZE,
                             Y_OFFSET + y * Map::CELL_SIZE,
                             map, Coord(x, y),
-                            showDistances, playerHere);
+                            displayMode, playerHere);
             }
         }
 
@@ -177,15 +214,17 @@ void gameloop(SDL_Renderer *renderer) {
 
         std::stringstream line1;
         line1 << "TAB to Toggle Random/Last Generator Mode  PLAYER POS: " << player;
-        if (showDistances) {
-            line1 <<  "  TO HERE: " << map.at(player.x, player.y).dist;
-            line1 <<  "  TO TARGET: " << map.at(map.getTarget()).dist;
+        if (displayMode == Display::Distance) {
+            line1 <<  "  To Here: " << map.at(player.x, player.y).dist;
+            line1 <<  "  To Target: " << map.at(map.getTarget()).dist;
+        } else if (displayMode == Display::Solution) {
+            line1 <<  "  Min Steps To Target: " << map.at(map.getTarget()).dist;
         }
         line1 << "  STEPS: " << mapSteps;
         font.text(0, SCREEN_HEIGHT - 30, line1.str());
 
         std::stringstream line2;
-        line2 << "D to Show/Hide Distances  N to Create New Map  O to Reset to Origin  T to Warp to Target";
+        line2 << "D to Change Display Mode  N to Create New Map  O to Reset to Origin  T to Warp to Target";
         font.text(0, SCREEN_HEIGHT - 20, line2.str());
 
         std::stringstream line3;
@@ -221,7 +260,11 @@ void gameloop(SDL_Renderer *renderer) {
                             cheatMode = !cheatMode;
                             break;
                         case SDLK_d:
-                            showDistances = !showDistances;
+                            switch(displayMode) {
+                                case Display::None:     displayMode = Display::Distance;    break;
+                                case Display::Distance: displayMode = Display::Solution;    break;
+                                default:                displayMode = Display::None;
+                            }
                             break;
                         case SDLK_n:
                             map.clearAll();
@@ -244,6 +287,7 @@ void gameloop(SDL_Renderer *renderer) {
                             if (mm.isDone()) {
                                 map.clearDist();
                                 map.setTarget(calcDistance(map));
+                                findPath(map);
                                 messageLog.push_back("Map completed.");
                             }
                             break;
@@ -260,6 +304,7 @@ void gameloop(SDL_Renderer *renderer) {
                             messageLog.push_back(ss.str());
                             map.clearDist();
                             map.setTarget(calcDistance(map));
+                            findPath(map);
                             break; }
 
                         case SDLK_LEFT:     tryMove(map, player, West, cheatMode);     break;
