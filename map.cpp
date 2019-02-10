@@ -18,6 +18,7 @@ Direction rotate(Direction d) {
         case South:    return West;
         case West:     return North;
         case North:    return East;
+        default:       return North;
     }
 }
 

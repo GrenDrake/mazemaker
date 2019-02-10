@@ -118,6 +118,7 @@ public:
             case South: return !at(x,y).south;
             case West:  return x == 0 ? false : !at(x-1,y).east;
             case North: return y == 0 ? false : !at(x,y-1).south;
+            default:    return false;
         }
     }
 
