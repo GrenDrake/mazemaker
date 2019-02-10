@@ -213,28 +213,27 @@ void gameloop(SDL_Renderer *renderer) {
         }
 
         std::stringstream line1;
-        line1 << "TAB to Toggle Random/Last Generator Mode  PLAYER POS: " << player;
+        line1 << "TAB - Toggle generator mode   Cursor: " << player;
         if (displayMode == Display::Distance) {
-            line1 <<  "  To Here: " << map.at(player.x, player.y).dist;
-            line1 <<  "  To Target: " << map.at(map.getTarget()).dist;
-        } else if (displayMode == Display::Solution) {
-            line1 <<  "  Min Steps To Target: " << map.at(map.getTarget()).dist;
+            line1 <<  "   To here: " << map.at(player.x, player.y).dist;
+        } else if (displayMode != Display::None) {
+            line1 <<  "   To target: " << map.at(map.getTarget()).dist;
         }
-        line1 << "  STEPS: " << mapSteps;
+        line1 << "   Steps: " << mapSteps;
         font.text(0, SCREEN_HEIGHT - 30, line1.str());
 
         std::stringstream line2;
-        line2 << "D to Change Display Mode  N to Create New Map  O to Reset to Origin  T to Warp to Target";
+        line2 << "D - Display Mode   N - New Map   O - Warp to Origin   T Warp to Target   Mode: ";
+        switch(mazeGen) {
+            case MazeMaker::Top:    line2 << "top";     break;
+            case MazeMaker::Random: line2 << "random";  break;
+            case MazeMaker::Bottom: line2 << "bottom";  break;
+        }
         font.text(0, SCREEN_HEIGHT - 20, line2.str());
 
         std::stringstream line3;
-        line3 << "Z to Quit   SPACE to Step  R to Run to Completion  C for Cheat Mode  ARROWS to Move";
-        if (cheatMode) line3 << "  (CHEAT MODE)";
-        switch(mazeGen) {
-            case MazeMaker::Top:    line3 << "  (TOP)";     break;
-            case MazeMaker::Random: line3 << "  (RANDOM)";  break;
-            case MazeMaker::Bottom: line3 << "  (BOTTOM)";  break;
-        }
+        line3 << "Z - Quit   SPACE - Step   R - Complete   C - Cheat mode   ARROWS - Move";
+        if (cheatMode) line3 << "   CHEAT MODE";
         font.text(0, SCREEN_HEIGHT - 10, line3.str());
 
         SDL_RenderPresent(renderer);
