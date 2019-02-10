@@ -236,9 +236,9 @@ void gameloop(SDL_Renderer *renderer) {
 
         std::stringstream line1;
         line1 << "TAB - Toggle generator mode   Cursor: " << player;
-        if (displayMode == Display::Distance) {
+        if (displayMode == Display::Distance && map.valid(player)) {
             line1 <<  "   To here: " << map.at(player.x, player.y).dist;
-        } else if (displayMode != Display::None) {
+        } else if (displayMode != Display::None && map.valid(map.getTarget())) {
             line1 <<  "   To target: " << map.at(map.getTarget()).dist;
         }
         line1 << "   Steps: " << mapSteps;
