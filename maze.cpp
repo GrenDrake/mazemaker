@@ -140,7 +140,7 @@ void gameloop(SDL_Renderer *renderer) {
 
     unsigned mapSteps = 0;
     bool showDistances = false;
-    bool randomMode = true;
+    MazeMaker::Source mazeGen = MazeMaker::Random;
     bool cheatMode = false;
     const int X_OFFSET = 18;
     const int Y_OFFSET = 10;
@@ -191,8 +191,11 @@ void gameloop(SDL_Renderer *renderer) {
         std::stringstream line3;
         line3 << "Z to Quit   SPACE to Step  R to Run to Completion  C for Cheat Mode  ARROWS to Move";
         if (cheatMode) line3 << "  (CHEAT MODE)";
-        if (randomMode) line3 << "  (RANDOM)";
-        else            line3 << "  (MOST RECENT)";
+        switch(mazeGen) {
+            case MazeMaker::Top:    line3 << "  (TOP)";     break;
+            case MazeMaker::Random: line3 << "  (RANDOM)";  break;
+            case MazeMaker::Bottom: line3 << "  (BOTTOM)";  break;
+        }
         font.text(0, SCREEN_HEIGHT - 10, line3.str());
 
         SDL_RenderPresent(renderer);
@@ -229,11 +232,14 @@ void gameloop(SDL_Renderer *renderer) {
                             player = map.getOrigin();
                             break;
                         case SDLK_TAB:
-                            randomMode = !randomMode;
+                            switch(mazeGen) {
+                                case MazeMaker::Top:    mazeGen = MazeMaker::Random;    break;
+                                case MazeMaker::Random: mazeGen = MazeMaker::Bottom;    break;
+                                default:                mazeGen = MazeMaker::Top;       break;
+                            }
                             break;
                         case SDLK_SPACE:
-                            if (randomMode) mm.stepRandom();
-                            else            mm.stepTop();
+                            mm.step(mazeGen);
                             ++mapSteps;
                             if (mm.isDone()) {
                                 map.clearDist();
@@ -244,8 +250,7 @@ void gameloop(SDL_Renderer *renderer) {
                         case SDLK_r: {
                             std::clock_t start = std::clock();
                             while (!mm.isDone()) {
-                                if (randomMode) mm.stepRandom();
-                                else            mm.stepTop();
+                                mm.step(mazeGen);
                                 ++mapSteps;
                             }
                             std::clock_t end = std::clock();

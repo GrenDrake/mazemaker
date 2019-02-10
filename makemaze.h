@@ -8,6 +8,10 @@ struct Coord;
 
 class MazeMaker {
 public:
+    enum Source {
+        Top, Random, Bottom
+    };
+
     MazeMaker(Map &map)
     : map(map)
     { }
@@ -16,8 +20,7 @@ public:
         if (points.empty())
             points.push_back(startAt);
     }
-    void stepTop();
-    void stepRandom();
+    void step(Source source);
     bool isDone() const {
         return points.empty();
     }

@@ -4,34 +4,32 @@
 #include "map.h"
 #include "makemaze.h"
 
-void MazeMaker::stepTop() {
+void MazeMaker::step(Source source) {
     while (!points.empty()) {
-        Coord here = points.back();
-        points.pop_back();
-        Direction starting = static_cast<Direction>(rand() % 4);
-        Direction curDir = starting;
-        map.at(here).visited = true;
-        do {
-            Coord dest = here;
-            dest.shift(curDir);
-            if (map.valid(dest.x, dest.y) && !map.at(dest).visited) {
-                map.setWall(here.x, here.y, curDir, false);
-                points.push_back(here);
-                points.push_back(dest);
+        Coord here;
+        unsigned pointIndex = -1;
+        switch(source) {
+            case Top:
+                here = points.back();
+                points.pop_back();
+                break;
+            case Random:
+                pointIndex = rand() % points.size();
+                here = points.at(pointIndex);
+                points.erase(points.begin() + pointIndex);
+                break;
+            case Bottom:
+                here = points.front();
+                points.erase(points.begin());
+                break;
+            default:
+                // invalid input
                 return;
-            }
-            curDir = rotate(curDir);
-        } while(curDir != starting);
-    }
-}
+        }
 
-void MazeMaker::stepRandom() {
-    while (!points.empty()) {
-        unsigned index = rand() % points.size();
-        Coord here = points.at(index);
         Direction starting = static_cast<Direction>(rand() % 4);
         Direction curDir = starting;
-        map.at(here).visited = true;
+        map.at(here).viewed = true;
         do {
             Coord dest = here;
             dest.shift(curDir);
@@ -44,6 +42,5 @@ void MazeMaker::stepRandom() {
             }
             curDir = rotate(curDir);
         } while(curDir != starting);
-        points.erase(points.begin() + index);
     }
 }
