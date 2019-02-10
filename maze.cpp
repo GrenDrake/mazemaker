@@ -168,7 +168,7 @@ void drawMapCell(SDL_Renderer *renderer, int atX, int atY, const Map &map, const
 }
 
 void gameloop(SDL_Renderer *renderer) {
-    Map map(40, 30);
+    Map map(8, 6);
     MazeMaker mm(map);
     map.setOrigin(Coord{rand() % map.getWidth(), rand() % map.getHeight()});
     mm.setStart(map.getOrigin());
@@ -183,16 +183,21 @@ void gameloop(SDL_Renderer *renderer) {
     const int Y_OFFSET = 10;
     const int X_AXIS_OFFSET = (Map::CELL_SIZE - 16) / 2;
     const int Y_AXIS_OFFSET = (Map::CELL_SIZE - 8) / 2;
+    const int MAX_DISPLAY_WIDTH = SCREEN_WIDTH / Map::CELL_SIZE - 2;
+    const int MAX_DISPLAY_HEIGHT = (SCREEN_HEIGHT - 90) / Map::CELL_SIZE - 2;
     while (1) {
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
-        for (int x = 0; x < map.getWidth() && x < 40; ++x) {
-            font.text(X_OFFSET + X_AXIS_OFFSET + x * Map::CELL_SIZE, 1, std::to_string(x));
+        for (int x = 0; x < map.getWidth() && x < MAX_DISPLAY_WIDTH; ++x) {
+            font.text(X_OFFSET + X_AXIS_OFFSET + x * Map::CELL_SIZE, 1, std::to_string(x + 1));
+            font.text(X_OFFSET + X_AXIS_OFFSET + x * Map::CELL_SIZE, 11 + MAX_DISPLAY_HEIGHT * Map::CELL_SIZE, std::to_string(x + 1));
         }
-        for (int y = 0; y < map.getWidth() && y < 30; ++y) {
-            font.text(1, Y_OFFSET + Y_AXIS_OFFSET + y * Map::CELL_SIZE, std::to_string(y));
-            for (int x = 0; x < map.getWidth() && x < 40; ++x) {
+        for (int y = 0; y < map.getHeight() && y < MAX_DISPLAY_HEIGHT; ++y) {
+            font.text(1, Y_OFFSET + Y_AXIS_OFFSET + y * Map::CELL_SIZE, std::to_string(y + 1));
+            font.text((MAX_DISPLAY_WIDTH + 1) * Map::CELL_SIZE,
+                         Y_OFFSET + Y_AXIS_OFFSET + y * Map::CELL_SIZE, std::to_string(y + 1));
+            for (int x = 0; x < map.getWidth() && x < MAX_DISPLAY_WIDTH; ++x) {
                 // if (!map.valid(x,y)) continue;
                 bool playerHere = false;
                 if (player.x == x && player.y == y)
@@ -205,12 +210,12 @@ void gameloop(SDL_Renderer *renderer) {
             }
         }
 
-        unsigned pos = 0;
-        for (unsigned i = messageLog.size(); i > 0 && pos < SCREEN_HEIGHT - 20; --i) {
-            const unsigned idx = i - 1;
-            font.text(820, pos - 10, messageLog[idx]);
-            pos += 10;
-        }
+        if (messageLog.size() > 2)
+            font.text(0, SCREEN_HEIGHT - 70, messageLog[messageLog.size() - 3]);
+        if (messageLog.size() > 1)
+            font.text(0, SCREEN_HEIGHT - 60, messageLog[messageLog.size() - 2]);
+        if (messageLog.size() > 0)
+            font.text(0, SCREEN_HEIGHT - 50, messageLog[messageLog.size() - 1]);
 
         std::stringstream line1;
         line1 << "TAB - Toggle generator mode   Cursor: " << player;
@@ -299,7 +304,8 @@ void gameloop(SDL_Renderer *renderer) {
                             std::clock_t end = std::clock();
                             double duration = (end - start) / static_cast<double>(CLOCKS_PER_SEC);
                             std::stringstream ss;
-                            ss << "Built in " << duration << " seconds.";
+                            ss.precision(4);
+                            ss << "Built in " << std::fixed << duration << " seconds.";
                             messageLog.push_back(ss.str());
                             map.clearDist();
                             map.setTarget(calcDistance(map));
