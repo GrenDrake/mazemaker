@@ -187,8 +187,49 @@ void drawMapCell(SDL_Renderer *renderer, int atX, int atY, const Map &map, const
 
 }
 
+void drawmap(SDL_Renderer *renderer, const Map &map, const Coord &player, const Display &displayMode) {
+    const int MAX_DISPLAY_WIDTH = SCREEN_WIDTH / Map::CELL_SIZE;
+    const int MAX_DISPLAY_HEIGHT = (SCREEN_HEIGHT - 90) / Map::CELL_SIZE;
+
+    int left, top;
+    if (map.getWidth() <= MAX_DISPLAY_WIDTH && map.getHeight() <= MAX_DISPLAY_HEIGHT) {
+        left = (MAX_DISPLAY_WIDTH  - map.getWidth())  / 2;
+        top  = (MAX_DISPLAY_HEIGHT - map.getHeight()) / 2;
+    } else {
+        left = MAX_DISPLAY_WIDTH / 2 - player.x;
+        top = MAX_DISPLAY_HEIGHT / 2 - player.y;
+    }
+
+    for (int y = 0; y < MAX_DISPLAY_HEIGHT; ++y) {
+        for (int x = 0; x < MAX_DISPLAY_WIDTH; ++x) {
+            int mapX = x - left;
+            int mapY = y - top;
+            if (map.valid(mapX,mapY)) {
+                bool playerHere = false;
+                if (player.x == mapX && player.y == mapY)
+                    playerHere = true;
+                drawMapCell(renderer,
+                            x * Map::CELL_SIZE,
+                            y * Map::CELL_SIZE,
+                            map, Coord(mapX, mapY),
+                            displayMode, playerHere);
+            } else {
+                SDL_Rect here = {
+                    x * Map::CELL_SIZE,
+                    y * Map::CELL_SIZE,
+                    Map::CELL_SIZE, Map::CELL_SIZE
+                };
+                SDL_SetRenderDrawColor(renderer, 63, 63, 63, SDL_ALPHA_OPAQUE);
+                SDL_RenderFillRect(renderer, &here);
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+                SDL_RenderDrawRect(renderer, &here);
+            }
+        }
+    }
+}
+
 void gameloop(SDL_Renderer *renderer) {
-    Map map(48, 30);
+    Map map(50, 30);
     MazeMaker mm(map);
     map.setOrigin(Coord{rand() % map.getWidth(), rand() % map.getHeight()});
     mm.setStart(map.getOrigin());
@@ -199,36 +240,14 @@ void gameloop(SDL_Renderer *renderer) {
     Display displayMode = Display::None;
     MazeMaker::Source mazeGen = MazeMaker::Random;
     bool cheatMode = false;
-    const int X_OFFSET = 18;
-    const int Y_OFFSET = 10;
-    const int X_AXIS_OFFSET = (Map::CELL_SIZE - 16) / 2;
-    const int Y_AXIS_OFFSET = (Map::CELL_SIZE - 8) / 2;
-    const int MAX_DISPLAY_WIDTH = SCREEN_WIDTH / Map::CELL_SIZE - 2;
-    const int MAX_DISPLAY_HEIGHT = (SCREEN_HEIGHT - 90) / Map::CELL_SIZE - 2;
 
+    const int INFO_AREA_HEIGHT = SCREEN_HEIGHT - (SCREEN_HEIGHT - 90) / Map::CELL_SIZE * Map::CELL_SIZE;
     while (1) {
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-        SDL_RenderClear(renderer);
-        for (int x = 0; x < map.getWidth() && x < MAX_DISPLAY_WIDTH; ++x) {
-            font.text(X_OFFSET + X_AXIS_OFFSET + x * Map::CELL_SIZE, 1, std::to_string(x + 1));
-            font.text(X_OFFSET + X_AXIS_OFFSET + x * Map::CELL_SIZE, 11 + MAX_DISPLAY_HEIGHT * Map::CELL_SIZE, std::to_string(x + 1));
-        }
-        for (int y = 0; y < map.getHeight() && y < MAX_DISPLAY_HEIGHT; ++y) {
-            font.text(1, Y_OFFSET + Y_AXIS_OFFSET + y * Map::CELL_SIZE, std::to_string(y + 1));
-            font.text((MAX_DISPLAY_WIDTH + 1) * Map::CELL_SIZE,
-                         Y_OFFSET + Y_AXIS_OFFSET + y * Map::CELL_SIZE, std::to_string(y + 1));
-            for (int x = 0; x < map.getWidth() && x < MAX_DISPLAY_WIDTH; ++x) {
-                // if (!map.valid(x,y)) continue;
-                bool playerHere = false;
-                if (player.x == x && player.y == y)
-                    playerHere = true;
-                drawMapCell(renderer,
-                            X_OFFSET + x * Map::CELL_SIZE,
-                            Y_OFFSET + y * Map::CELL_SIZE,
-                            map, Coord(x, y),
-                            displayMode, playerHere);
-            }
-        }
+        drawmap(renderer, map, player, displayMode);
+
+        SDL_Rect infoAreaRect = { 0, SCREEN_HEIGHT - INFO_AREA_HEIGHT, SCREEN_WIDTH, INFO_AREA_HEIGHT };
+        SDL_SetRenderDrawColor(renderer, 32, 32, 32, SDL_ALPHA_OPAQUE);
+        SDL_RenderFillRect(renderer, &infoAreaRect);
 
         font.text(0, SCREEN_HEIGHT - 70, messageLog.get(0));
         font.text(0, SCREEN_HEIGHT - 60, messageLog.get(1));
